@@ -8,11 +8,16 @@ var del = require('del');
 var runSequence = require('run-sequence');
 var eventStream = require('event-stream');
 var mainBowerFiles = require('main-bower-files');
+var sass = require('gulp-sass');
+var sourcemaps = require('gulp-sourcemaps');
 
 gulp.task('styles', function () {
-	return gulp.src('content/styles/main.css')
+	return gulp.src('app/styles/**/*.scss')
+        .pipe(sourcemaps.init())
+        .pipe(sass().on('error', sass.logError))
 		.pipe($.autoprefixer('last 1 version'))
-		.pipe(gulp.dest('.tmp/styles'))
+        .pipe(sourcemaps.write('./maps'))
+		.pipe(gulp.dest('app/styles'))
 		.pipe($.size());
 });
 
@@ -33,7 +38,7 @@ function compileAppScripts() {
 		outDefPath: '.tmp/definitions/app',
 		outJsPath: '.tmp/js/app',
 		outJsFile: 'output.js'
-	}
+	};
 	return compileTS(opt);
 }
 
@@ -63,7 +68,7 @@ gulp.task('html', ['styles', 'scripts:app'], function () {
 });
 
 gulp.task('images', function () {
-	return gulp.src('content/images/**/*')
+	return gulp.src('app/images/**/*')
 		.pipe($.cache($.imagemin({
 			optimizationLevel: 3,
 			progressive: true,
@@ -142,7 +147,7 @@ function compileTestScripts() {
 		outDefPath: '.tmp/definitions/test',
 		outJsPath: '.tmp/js/test',
 		outJsFile: 'output.test.js'
-	}
+	};
 	return compileTS(opt);
 }
 
@@ -177,14 +182,15 @@ gulp.task('wiredep', function () {
 		.pipe(gulp.dest('app'));
 });
 
-gulp.task('watch', ['serve', 'test:ci'], function () {
+gulp.task('watch', ['serve'], function () { //, 'test:ci'], function () {
 	$.watch([
 		'app/*.html',
-		'app/**/*.ts',
-		'content/styles/**/*.css',
-		'content/images/**/*'
+		'app/**/*.js',
+		'app/styles/**/*.css',
+		'app/images/**/*'
 	]).pipe($.connect.reload());
 
+    gulp.watch('app/styles/**/*.scss', ['styles']);
 	gulp.watch(['app/**/*.ts', 'test/**/*.ts'], ['test:ci']);
 	gulp.watch('bower.json', ['wiredep']);
 });
